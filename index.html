@@ -1,0 +1,79 @@
+<!-- generate-code.html -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔑 Dapatkan Kode Akses Album</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; padding: 20px; }
+    .box { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #2c3e50; }
+    input, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    button { background: #3498db; color: white; font-weight: bold; cursor: pointer; }
+    button:hover { background: #2980b9; }
+    #result { margin-top: 15px; padding: 12px; background: #e8f4fc; border-radius: 6px; font-family: monospace; word-break: break-all; }
+    .info { font-size: 13px; color: #7f8c8d; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🔑 Dapatkan Kode Akses</h2>
+    <p>Masukkan nama lengkap dan password rahasia yang diberikan.</p>
+    
+    <input type="text" id="name" placeholder="Nama Lengkap Anda">
+    <input type="password" id="password" placeholder="Password Rahasia">
+    <button onclick="generateCode()">Buat Kode Akses</button>
+    
+    <div id="result">Kode akan muncul di sini...</div>
+    <div class="info">
+      ℹ️ Salin kode ini, lalu masukkan di halaman album utama.
+    </div>
+  </div>
+
+  <script>
+    // Fungsi hashing sederhana
+    function hashPass(pass) {
+      let h = 0;
+      for (let c of pass) h = Math.imul(h ^ c.charCodeAt(), 1540483477) >>> 0;
+      return h;
+    }
+
+    const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    function textToCode(text, pass) {
+      const seed = hashPass(pass);
+      let out = '';
+      for (let i = 0; i < text.length; i++) {
+        const code = text.charCodeAt(i);
+        const offset = (seed + i * 41) % CHARS.length;
+        const val = (code + offset) % 256;
+        out += CHARS[Math.floor(val / CHARS.length)] + CHARS[val % CHARS.length];
+      }
+      return out.match(/.{1,5}/g)?.join('-') || out;
+    }
+
+    function generateCode() {
+      const name = document.getElementById('name').value.trim();
+      const pass = document.getElementById('password').value;
+      const res = document.getElementById('result');
+      
+      if (!name || !pass) {
+        res.textContent = '⚠️ Nama dan password wajib diisi!';
+        return;
+      }
+
+      // Ganti dengan password rahasia yang kamu tentukan!
+      const SHARED_SECRET = "123"; // ← GANTI INI DENGAN PASSWORD RAHASIA KAMU!
+
+      if (pass !== SHARED_SECRET) {
+        res.textContent = '❌ Password salah! Tanya ke pemilik album.';
+        return;
+      }
+
+      const kode = textToCode(name, SHARED_SECRET);
+      res.innerHTML = `<strong>Kode Akses Anda:</strong><br>${kode}`;
+    }
+  </script>
+</body>
+</html>
