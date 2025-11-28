@@ -13,6 +13,7 @@
     button { background: #3498db; color: white; font-weight: bold; cursor: pointer; }
     button:hover { background: #2980b9; }
     #result { margin-top: 15px; padding: 12px; background: #e8f4fc; border-radius: 6px; font-family: monospace; word-break: break-all; }
+    .small-btn { width: auto; padding: 6px 10px; margin-left: 8px; display: inline-block; vertical-align: middle; font-size: 13px; border-radius: 6px; }
     .info { font-size: 13px; color: #7f8c8d; margin-top: 10px; }
   </style>
 </head>
@@ -22,10 +23,17 @@
     <p>Masukkan nama lengkap dan password rahasia yang diberikan.</p>
     
     <input type="text" id="name" placeholder="Nama Lengkap Anda">
+    <datalist id="nameList"></datalist>
     <input type="password" id="password" placeholder="Password Rahasia">
     <button onclick="generateCode()">Buat Kode Akses</button>
     
-    <div id="result">Kode akan muncul di sini...</div>
+    <div id="result">
+      <div id="codeWrapper">
+        <strong id="codeLabel">Kode akan muncul di sini...</strong>
+        <span id="codeText" style="display:block; margin-top:8px;"></span>
+      </div>
+      <button id="copyBtn" class="small-btn" style="display:none">Salin</button>
+    </div>
     <div class="info">
       ℹ️ Salin kode ini, lalu masukkan di halaman album utama.
     </div>
@@ -40,6 +48,48 @@
     }
 
     const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    // Password bersama (dipakai juga untuk memunculkan opsi nama)
+    const SHARED_SECRET = "tkjone";
+
+    // Daftar nama yang akan muncul sebagai opsi ketika password cocok
+    const NAMES = [
+            "Abiyu Anugrah",
+            "Aktsar Hakim Nst",
+            "Amalia Safitri",
+            "Amir Hamzah",
+            "Asra Bilhuda",
+            "Eli Zahara",
+            "Ezyla Aziz Zeira",
+            "Fadel Muhammad Rezki",
+            "Faizul Adzimi",
+            "Faldho Adzani",
+            "Fitria Mulia",
+            "Galang Luqmanul Hakim",
+            "Hafif Mabrur",
+            "Kasifa Rahmah",
+            "Keysa Putri Ramadani",
+            "M. Rafiki Rasli",
+            "Muhammad Hibban Aulia",
+            "Muhammad Yudha Pratama",
+            "Najia Atika Sahira",
+            "Najwa Asyifa",
+            "Rafi Idham",
+            "Ranti Amelia",
+            "Rasima Handayani",
+            "Reviansyah",
+            "Reza Ardiansyah",
+            "Sakinah Khanza",
+            "Salimah",
+            "Salsa Bila",
+            "Susi Saskia",
+            "Syah Ratul Faiza",
+            "Thalita Syafa Harahap",
+            "Tonius Nduru",
+            "Yennisa Mulia",
+            "Yuda Setriawan",
+            "Zhyllan Fyllah"
+    ];
 
     function textToCode(text, pass) {
       const seed = hashPass(pass);
@@ -57,23 +107,100 @@
       const name = document.getElementById('name').value.trim();
       const pass = document.getElementById('password').value;
       const res = document.getElementById('result');
+      const codeLabel = document.getElementById('codeLabel');
+      const codeText = document.getElementById('codeText');
+      const copyBtn = document.getElementById('copyBtn');
       
       if (!name || !pass) {
-        res.textContent = '⚠️ Nama dan password wajib diisi!';
+        codeLabel.textContent = '⚠️ Nama dan password wajib diisi!';
+        codeText.textContent = '';
+        copyBtn.style.display = 'none';
         return;
       }
 
-      // Ganti dengan password rahasia yang kamu tentukan!
-      const SHARED_SECRET = "123"; // ← GANTI INI DENGAN PASSWORD RAHASIA KAMU!
-
       if (pass !== SHARED_SECRET) {
-        res.textContent = '❌ Password salah! Tanya ke pemilik album.';
+        codeLabel.textContent = '❌ Password salah! Tanya ke pemilik album.';
+        codeText.textContent = '';
+        copyBtn.style.display = 'none';
         return;
       }
 
       const kode = textToCode(name, SHARED_SECRET);
-      res.innerHTML = `<strong>Kode Akses Anda:</strong><br>${kode}`;
+      codeLabel.innerHTML = '<strong>Kode Akses Anda:</strong>';
+      codeText.textContent = kode;
+      copyBtn.style.display = 'inline-block';
     }
+
+    // --- Fungsi copy ke clipboard dan feedback ---
+    function copyCode() {
+      const codeText = document.getElementById('codeText');
+      const copyBtn = document.getElementById('copyBtn');
+      const text = codeText.textContent || '';
+      if (!text) return;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          const prev = copyBtn.textContent;
+          copyBtn.textContent = 'Disalin!';
+          setTimeout(() => copyBtn.textContent = prev, 1800);
+        }).catch(() => fallbackCopy(text, copyBtn));
+      } else {
+        fallbackCopy(text, copyBtn);
+      }
+    }
+
+    function fallbackCopy(text, copyBtn) {
+      // fallback untuk browser lama
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        const prev = copyBtn.textContent;
+        copyBtn.textContent = 'Disalin!';
+        setTimeout(() => copyBtn.textContent = prev, 1800);
+      } catch (e) {
+        alert('Gagal menyalin. Silakan salin secara manual.');
+      }
+      document.body.removeChild(ta);
+    }
+
+    document.getElementById('copyBtn').addEventListener('click', copyCode);
+
+    // --- Fungsi untuk mem-populasi datalist nama hanya jika password cocok ---
+    const passwordInput = document.getElementById('password');
+    const nameInput = document.getElementById('name');
+    const nameList = document.getElementById('nameList');
+
+    function clearNameOptions() {
+      while (nameList.firstChild) nameList.removeChild(nameList.firstChild);
+    }
+
+    function populateNameOptions() {
+      clearNameOptions();
+      for (const n of NAMES) {
+        const opt = document.createElement('option');
+        opt.value = n;
+        nameList.appendChild(opt);
+      }
+    }
+
+    function updateNameOptions() {
+      if (passwordInput.value === SHARED_SECRET) {
+        // isi dan aktifkan daftar opsi
+        populateNameOptions();
+        nameInput.setAttribute('list', 'nameList');
+      } else {
+        // kosongkan opsi dan nonaktifkan
+        clearNameOptions();
+        nameInput.removeAttribute('list');
+      }
+    }
+
+    passwordInput.addEventListener('input', updateNameOptions);
+    // inisialisasi
+    updateNameOptions();
   </script>
 </body>
 </html>
